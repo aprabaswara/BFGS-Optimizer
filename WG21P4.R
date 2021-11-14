@@ -102,8 +102,8 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   eps <- 1e-7 ## finite difference interval
   
   for (i in 1:length(theta)) { ## loop over parameters
-    th1 <- theta; th1[i] <- th1[i] + eps ##increase theta_min by eps
-    g1 <- g(theta+eps,f,...) ##gradient value at theta+eps
+    th <- theta; th[i] <- th[i] + eps ##increase theta by eps
+    g1 <- g(th,f,...) ##gradient value at theta+eps
     H[i,] <- (g1 - g0)/eps ## approximate second derivatives in Hessian matrix
   }
   
