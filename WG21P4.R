@@ -108,7 +108,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   }
   
   #convert asymmetric Hessian matrix into symmetric Hessian matrix
-  if (max(abs(H-t(H))) != 0){
+  if (isSymmetric(H)==FALSE){
     H <- 0.5 * (t(H) + H)
   }
   
