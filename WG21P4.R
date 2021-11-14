@@ -78,14 +78,14 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   
   while(iter <= maxit){
     
+    #take the absolute value of each element in f and its gradient
+    abs_grad <- abs(g(theta,f,...)) 
+    abs_f <- abs(f(theta,...)) 
+    
     #exit the loop if the maximum of iteration is one
     if (maxit == 1){
       break
     }
-    
-    #take the absolute value of each element in f and its gradient
-    abs_grad <- abs(g(theta,f,...)) 
-    abs_f <- abs(f(theta,...)) 
     
     delta <- -B %*% g(theta,f,...) ##compute step length
     delta <- drop(delta) ##return delta as a vector
