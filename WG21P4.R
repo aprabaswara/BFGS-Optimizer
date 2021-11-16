@@ -135,6 +135,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     ##check if the step reduces the value of objective function
     if (f(theta+delta,...) >= f(theta,...)){
       warning("Steps failed to reduce the objective before convergence occured!")
+      break
     }
     
     theta_new <- theta+delta ##update the theta value
