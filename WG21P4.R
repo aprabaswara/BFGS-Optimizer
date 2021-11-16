@@ -8,6 +8,8 @@
 
 ##overview:
 ##---------------------------------------------------------------------------------------------------------------------------------------------
+##Finite differencing approximation reduces reliability, accuracy, and efficiency a little,
+##but for many cases it is good enough.
 
 ##test function that professor provided to test the BFGS method
 rb <- function(theta,getg=FALSE,k=10) {
@@ -44,8 +46,10 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     
     ##output: grad = gradient of theta
     
-    #compute gradient by forward difference if the user didn't supply it
-    if (is.null(attr(f(theta,...),"gradient"))){
+    #compute gradient by finite difference approximation if the user didn't supply it
+    
+    #if (is.null(attr(f(theta,...),"gradient"))){
+    if (f[2] == TRUE){
       f0 <- f(theta,...) ## f at theta
       eps <- 1e-7 ## finite difference interval
       grad <- c() ##initialize vector to store gradient values
@@ -54,13 +58,13 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
         
         th <- theta; th[i] <- th[i] + eps ## increase theta by eps
         f1 <- f(th,...) ## compute f at theta+eps
-        grad[i] <- (f1 - f0)/eps ## approximate first order derivative
+        grad[i] <- (f1 - f0) / eps ## approximate first order derivative
       }
     }
     
     #get the gradient from f if the user supply it
     else{
-      grad <- attr(f(theta,...),"gradient")
+       
     }
     
     return(grad)
