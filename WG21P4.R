@@ -69,8 +69,9 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     
     return(grad)
   }
+ 
   
-  step_reduce <- function(theta, delta, g, f, ...){
+  #step_reduce <- function(theta, delta, g, f, ...){
     ##function to reduce the step until satisfying the second Wolfe condition
     
     ##input: 
@@ -80,24 +81,79 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     
     ##output: delta = the perturbation vector that satisfying the second Wolfe condition and reduce the values of objective function
     
-    c2 = 0.9 ##constant for checking the second Wolfe condition
-    grad_delta1 <- crossprod(g(theta,f,...),delta) ##grad(theta)^T delta
-    grad_delta1 <- drop(grad_delta1)
-    grad_delta2 <- crossprod(g(theta+delta,f,...),delta) ##grad(theta+delta)^T delta
-    grad_delta2 <- drop(grad_delta2)
+    #c2 = 0.9 ##constant for checking the second Wolfe condition
+    #grad_delta1 <- crossprod(g(theta,f,...),delta) ##grad(theta)^T delta
+    #grad_delta1 <- drop(grad_delta1)
+    #grad_delta2 <- crossprod(g(theta+delta,f,...),delta) ##grad(theta+delta)^T delta
+    #grad_delta2 <- drop(grad_delta2)
     
     ##find delta that satisfying second Wolfe condition and decreases the objective function
-    while (grad_delta2 < c2 * grad_delta1){
-      delta <- delta/2 ##halve the delta
-      grad_delta1 <- crossprod(g(theta,f,...),delta) ##update grad(theta)^T delta
-      grad_delta1 <- drop(grad_delta1)
-      grad_delta2 <- crossprod(g(theta+delta,f,...),delta) ##update grad(theta+delta)^T delta
-      grad_delta2 <- drop(grad_delta2)
-    }
+    #while (grad_delta2 < c2 * grad_delta1){
+      #delta <- delta/2 ##halve the delta
+      #grad_delta1 <- crossprod(g(theta,f,...),delta) ##update grad(theta)^T delta
+      #grad_delta1 <- drop(grad_delta1)
+      #grad_delta2 <- crossprod(g(theta+delta,f,...),delta) ##update grad(theta+delta)^T delta
+      #grad_delta2 <- drop(grad_delta2)
+      #return(delta)
+    #}
     
-    return(delta)
+
+    step_length <- function(theta, f, delta, B, g,...){
+      
+      direction = - B %*% g(theta,f,...)#grad?
+      grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
+      grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
+      c2 <- 0.9
+      #ieration according to the second condition of Wolfe conditions                    
+      while (grad_delta2 >= c2 * grad_delta1){
+        delta <- (delta / 2 + delta) / 2
+        grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
+        grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
+        step_len <- delta / direction
+        return(step_len)
+
+      }
     
-  }
+    
+      #initialisation  
+      B <- I#need set dimension?
+      direction = - B %*% g(theta,f,...)
+      step_len <- step_length(theta, f, delta, B, g,...)
+      s <- step_len * direction
+      theta_new <- theta + s
+      y <- g(theta_new,f,...) - g(theta,f,...)
+      grad <- g(theta_new,f,...)
+      f0 <- f(theta_new)
+      iter <- 0
+      inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
+      rho <- 1/inv_rho ##1/rho^(-1)
+      rho_syt <- rho*tcrossprod(s,y) ##rho*s*y^T
+      rho_yst <- rho*tcrossprod(y,s) ##rho*y*s^T
+      matrix1 <- I-rho_syt ##I-rho*s*y^T
+      matrix2 <- I-rho_yst ##I-rho*y*s^T
+      B <- (matrix1 %*% B) %*% matrix2 + rho*tcrossprod(s) ##update B
+      
+      while (max(abs(grad)) <= (abs(f0) + fscale) * tol & iter <= maxit){
+        
+        s <- step_len * direction
+        theta_new <- theta + s
+        y <- g(theta_new,f,...) - g(theta,f,...)
+        inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
+        rho <- 1/inv_rho ##1/rho^(-1)
+        rho_syt <- rho * tcrossprod(s,y) ##rho*s*y^T
+        rho_yst <- rho * tcrossprod(y,s) ##rho*y*s^T
+        matrix1 <- I - rho_syt ##I-rho*s*y^T
+        matrix2 <- I-rho_yst ##I-rho*y*s^T
+        
+        B <- (matrix1 %*% B) %*% matrix2 + rho * tcrossprod(s) ##update B
+        iter <- iter + 1
+        
+        f0 <- f(theta_new,...)
+        grad <- g(theta_new,f0,...)
+        
+      } 
+      
+  
   
   
   ##check if objective function is finite or not
