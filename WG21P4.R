@@ -132,12 +132,17 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     delta <- drop(delta) ##return delta as a vector
     delta <- step_reduce(theta, delta, g, f, ...) ##find delta that reduce objective function
     
+    ##check if the step reduces the value of objective function
+    if (f(theta+delta,...) >= f(theta,...)){
+      warning("Steps failed to reduce the objective before convergence occured!")
+    }
+    
     theta_new <- theta+delta ##update the theta value
     s <- theta_new-theta
     y <- g(theta_new,f,...)-g(theta,f,...)
     inv_rho <- crossprod(s,y) ##rho^(-1)=s^T*y
     inv_rho <- drop(inv_rho)
-    rho <- 1/sty ##1/rho^(-1)
+    rho <- 1/inv_rho ##1/rho^(-1)
     
     rho_syt <- rho*tcrossprod(s,y) ##rho*s*y^T
     rho_yst <- rho*tcrossprod(y,s) ##rho*y*s^T
