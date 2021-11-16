@@ -139,8 +139,8 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     inv_rho <- drop(inv_rho)
     rho <- 1/sty ##1/rho^(-1)
     
-    rho_syt <- tcrossprod(s,y) ##rho*s*y^T
-    rho_yst <- tcrossprod(y,s) ##rho*y*s^T
+    rho_syt <- rho*tcrossprod(s,y) ##rho*s*y^T
+    rho_yst <- rho*tcrossprod(y,s) ##rho*y*s^T
     
     matrix1 <- I-rho_syt ##I-rho*s*y^T
     matrix2 <- I-rho_yst ##I-rho*y*s^T
