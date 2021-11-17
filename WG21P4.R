@@ -112,11 +112,9 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
       
       #}
       delta <- delta / 2#make f1 get smaller
-      theta_new <- theta + delta
       print('ok2')
       f0 <- f(theta,...)
-      f1 <- f(theta_new,...)
-      theta <- theta_new
+      f1 <- f(theta + delta,...)
     }
     #now reduce step we get decrese on objective
     #condition 2
