@@ -64,6 +64,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     
     #get the gradient from f if the user supply it
     else{
+      grad <- attr(f(theta,...),"gradient")
        
     }
     
@@ -100,43 +101,58 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
 
     step_length <- function(theta, f, delta, B, g,...){
       
-      direction = - B %*% g(theta,f,...)#grad?
+      step_direc = - B %*% g(theta,f,...)#grad?
       grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
       grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
       c2 <- 0.9
       #ieration according to the second condition of Wolfe conditions                    
-      while (grad_delta2 >= c2 * grad_delta1){
-        delta <- (delta / 2 + delta) / 2
+      n <- 1
+      while (grad_delta2 < c2 * grad_delta1){
+        delta <- (1 + 1 / (n + 1)) * delta 
         grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
         grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
-        step_len <- delta / direction
-        return(step_len)
-
-      }
-    
-    
-      #initialisation  
-      B <- I#need set dimension?
-      direction = - B %*% g(theta,f,...)
-      step_len <- step_length(theta, f, delta, B, g,...)
-      s <- step_len * direction
-      theta_new <- theta + s
-      y <- g(theta_new,f,...) - g(theta,f,...)
-      grad <- g(theta_new,f,...)
-      f0 <- f(theta_new)
-      iter <- 0
-      inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
-      rho <- 1/inv_rho ##1/rho^(-1)
-      rho_syt <- rho*tcrossprod(s,y) ##rho*s*y^T
-      rho_yst <- rho*tcrossprod(y,s) ##rho*y*s^T
-      matrix1 <- I-rho_syt ##I-rho*s*y^T
-      matrix2 <- I-rho_yst ##I-rho*y*s^T
-      B <- (matrix1 %*% B) %*% matrix2 + rho*tcrossprod(s) ##update B
-      
-      while (max(abs(grad)) <= (abs(f0) + fscale) * tol & iter <= maxit){
+        n <- n + 1
         
-        s <- step_len * direction
+      }
+      return(delta / step_direc)
+    }
+      #iteration for delta
+    
+      #method 1(new material)
+      #initial value
+      #step_direc = - B %*% g(theta,f,...)
+      
+      #delta <- step_direc * step_len
+      #c <- 3 / 2
+      #while(f(theta + delta_initial,...) > (f(theta,...) + c1 * crossprod(g(theta), delta))){
+        #delta <- c * delta_initial  
+      #}
+      
+      # method 2
+      B <- I 
+      step_direc = - B %*% g(theta,f,...)
+      delta <- step_direc * 2
+      iter <- 0
+      step_len <- step_length(theta, f, delta, B, g,...)
+      s <- step_len * step_direc
+      theta_new <- theta + s
+      grad <- g(theta_new,f,...)
+
+      while (iter <= maxit | max(abs(grad)) <= (abs(f(theta_new)) + fscale) * tol){
+        iter <- iter + 1
+        f0 <- f(theta,...)
+        step_len <- step_length(theta, f, delta, B, g,...)
+        s <- step_len * step_direc
         theta_new <- theta + s
+        f1 <- f(theta_new,...)
+        
+        if (f1 < f0 | f1 %in% c(-Inf,Inf) | is.na(f1)){#f0 na?
+          delta <- delta / 2
+          step_len <- step_length(theta, f, delta, B, g,...)
+          
+        }else{#havn't finish,out put error
+          
+        }
         y <- g(theta_new,f,...) - g(theta,f,...)
         inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
         rho <- 1/inv_rho ##1/rho^(-1)
@@ -144,14 +160,21 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
         rho_yst <- rho * tcrossprod(y,s) ##rho*y*s^T
         matrix1 <- I - rho_syt ##I-rho*s*y^T
         matrix2 <- I-rho_yst ##I-rho*y*s^T
-        
         B <- (matrix1 %*% B) %*% matrix2 + rho * tcrossprod(s) ##update B
-        iter <- iter + 1
+        theta_new <- theta
+        step_direc = - B %*% g(theta,f,...)
+        step_len <- step_length(theta, f, delta, B, g,...)
+        s <- step_len * step_direc
+        theta_new <- theta + s
+        grad <- g(theta_new,f,...)
         
-        f0 <- f(theta_new,...)
-        grad <- g(theta_new,f0,...)
-        
-      } 
+      }
+       
+      
+      
+      
+      
+      
       
   
   
