@@ -48,8 +48,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     
     #compute gradient by finite difference approximation if the user didn't supply it
     
-    #if (is.null(attr(f(theta,...),"gradient"))){
-    if (f[2] == TRUE){
+    if (is.null(attr(f(theta,...),"gradient"))){
       f0 <- f(theta,...) ## f at theta
       eps <- 1e-7 ## finite difference interval
       grad <- c() ##initialize vector to store gradient values
@@ -174,21 +173,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
       
       
       
-      
-      
-  
-  
-  
-  ##check if objective function is finite or not
-  if (f(theta,...) %in% c(-Inf,Inf) | is.na(f(theta,...))){
-    warning("Objective function is not finite at given initial theta value!")
-  }
-  
-  ##check if derivative is finite or not
-  else if (g(theta,f,...) %in% c(-Inf,Inf) | is.na(g(theta,f,...))){
-    warning("Derivative is not finite at given initial theta value!")
-  }
-  
+  ##update start from here (find update that is numbered)
   n <- length(theta) ##length of vector theta
   I <- diag(n) ##initialize identity matrix
   B <- I ##initial value of the inverse of Hessian matrix
@@ -198,24 +183,52 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   while(iter <= maxit){
     iter = iter+1 ##increase iteration by one
     
+    ##update one
+    grad_index <- which(g(theta,f,...) %in% c(-Inf,Inf) | is.na(g(theta,f,...)))
+    ##check if objective function is finite or not
+    
+    if (f(theta,...) %in% c(-Inf,Inf) | is.na(f(theta,...))){
+      warning("Objective function is not finite at given initial theta value!")
+      break
+    }
+    
+    ##check if derivative is finite or not
+    
+    #else if (g(theta,f,...) %in% c(-Inf,Inf) | is.na(g(theta,f,...)))
+    else if (length(grad_index)!=0){
+      warning("Derivative is not finite at given initial theta value!")
+      break
+    }
+    ##-----------------------------------------------------------------
+    
     ##take the absolute value of each element in f and its gradient
     abs_grad <- abs(g(theta,f,...)) 
     abs_f <- abs(f(theta,...)) 
     
+    ##update two
     ##exit the loop if the convergence is reached
     if (max(abs_grad) < (abs_f+fscale)*tol){
       break
     }
     
+    ##check if maximum iteration is reached without convergence
+    else if (iter == maxit){
+      warning("Maximum iteration is reached without convergence!")
+      break
+    } 
+    ##-------------------------------------------------------------
+    
     delta <- -B %*% g(theta,f,...) ##compute step length
     delta <- drop(delta) ##return delta as a vector
     delta <- step_reduce(theta, delta, g, f, ...) ##find delta that reduce objective function
     
+    ##update 3
     ##check if the step reduces the value of objective function
     if (f(theta+delta,...) >= f(theta,...)){
       warning("Steps failed to reduce the objective before convergence occured!")
       break
-    }
+    } ##still unsure?
+    ##---------------------------------------------------------------------------
     
     theta_new <- theta+delta ##update the theta value
     s <- theta_new-theta
@@ -227,17 +240,16 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     rho_syt <- rho*tcrossprod(s,y) ##rho*s*y^T
     rho_yst <- rho*tcrossprod(y,s) ##rho*y*s^T
     
+    ##update 5
     matrix1 <- I-rho_syt ##I-rho*s*y^T
     matrix2 <- I-rho_yst ##I-rho*y*s^T
+    matrix3 <- (matrix1 %*% B) %*% matrix2 ##(I-rho*s*y^T)B(I-rho*y*s^T)
     
-    B <- (matrix1 %*% B) %*% matrix2 + rho*tcrossprod(s) ##update B
+    B <- matrix3 + rho*tcrossprod(s) ##update B
+    ##------------------------------------------------------------------
     theta <- theta_new ##update theta for the next iteration
   }
   
-  ##check if maximum iteration is reached without convergence
-  if (iter == maxit & max(abs_grad) => (abs_f+fscale)*tol){
-    warning("Maximum iteration is reached without convergence!")
-  } 
   
   H <- matrix(0, nrow = n, ncol = n) ##initialize Hessian matrix
   g0 <- g(theta,f,...) ##gradient value at the minimum theta value
@@ -256,5 +268,8 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   
   f_optimum <- f(theta,...) ##scalar value of objective function at the minimum
   
-  list(f = f_optimum, theta = theta, iter = iter, g = g0, H = H)
+  ##update 4
+  optim_summary <- list(f = f_optimum, theta = theta, iter = iter, g = g0, H = H)
+  return(optim_summary)
+  ##-----------------------------------------------------------------------------
 }
