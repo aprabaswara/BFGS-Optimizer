@@ -178,10 +178,10 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   I <- diag(n) ##initialize identity matrix
   B <- I ##initial value of the inverse of Hessian matrix
   
-  iter = 0 ##initialize first iteration
+  iter <- 0 ##initialize first iteration
   
   while(iter <= maxit){
-    iter = iter+1 ##increase iteration by one
+    iter <- iter+1 ##increase iteration by one
     
     ##update one
     grad_index <- which(g(theta,f,...) %in% c(-Inf,Inf) | is.na(g(theta,f,...)))
