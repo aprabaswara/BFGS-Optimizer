@@ -124,18 +124,19 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     c2 <- 0.9
     m <- 0.1
     
-    n <- 0
+    j <- 0
     while(grad_delta2 < c2 * grad_delta1){
-      m <- m / 2
-      n<- n+1
-      if (n > maxit){
+     
+      j<- j+1
+      if (j > maxit){
+        print(j)
         warning("Steps failed to reduce objective before convergence occured!")
         break
       }else if(!is.finite(f1) | f1 > f0){
         delta <-  delta / 2
         
       }else{
-        delta<-(1 + m) * delta
+        delta<-(1 + 0.1) * delta
         
       }
       
@@ -196,3 +197,4 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   list(f = f_optimum, theta = theta, iter = iter, g = g0, H = H)
 }
 bfgs(theta=c(-1,2),f=rb,getg=FALSE,k=10,tol=1e-5,fscale=1,maxit=100)
+optim(c(-1, 2), rb, method = "BFGS", hessian = TRUE)
