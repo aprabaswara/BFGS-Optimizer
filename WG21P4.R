@@ -83,7 +83,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     #initial value
     grad_index <- which(is.finite(g(theta,f,...))==FALSE)
     ##check if objective function is finite or not
-    print(f(theta,...))
+    
     if (is.finite(f(theta,...))==FALSE){
       warning("Objective function is not finite at given initial theta value!")
       break
@@ -96,9 +96,9 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
       warning("Derivative is not finite at given initial theta value!")
       break
     }
-    print('ok')
+    
     if (max(abs(grad)) < (abs(f(theta,...)) + fscale) * tol){
-      print('break')
+      
       ##condition for convergence
       break
     }
@@ -112,7 +112,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
       
       #}
       delta <- delta / 2#make f1 get smaller
-      print('ok2')
+      
       f0 <- f(theta,...)
       f1 <- f(theta + delta,...)
     }
@@ -123,7 +123,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
     c2 <- 0.9
     m <- 0.1
-    print('ok3')
+    
     n <- 0
     while(grad_delta2 < c2 * grad_delta1){
       m <- m / 2
@@ -132,19 +132,21 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
         warning("Steps failed to reduce objective before convergence occured!")
         break
       }else if(!is.finite(f1) | f1 > f0){
-        delta <- (1 + m) * delta 
-        grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
-        grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
-        theta_new <- theta + delta
-        print('ok4')
-        f0 <- f(theta,...) 
-        f1 <- f(theta_new,...)
+        delta <-  delta / 2
+        
+      }else{
+        delta<-(1 + m) * delta
         
       }
       
+      grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
+      grad_delta2 <- drop(crossprod(g(theta + delta,f,...),delta))
+      
+      f0 <- f(theta,...) 
+      f1 <- f(theta + delta,...)
       
     }
-    print(delta)
+    
     s <- delta
     theta_new <- theta + s
     grad <- g(theta_new,f,...)
@@ -153,15 +155,16 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     y <- g(theta_new,f,...) - g(theta,f,...)
     inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
     rho <- 1/inv_rho ##1/rho^(-1)
-    print('ok5')
+    
     rho_syt <- rho * tcrossprod(s,y) ##rho*s*y^T
     rho_yst <- rho * tcrossprod(y,s) ##rho*y*s^T
     matrix1 <- I - rho_syt ##I-rho*s*y^T
     matrix2 <- I-rho_yst ##I-rho*y*s^T
     B <- (matrix1 %*% B) %*% matrix2 + rho * tcrossprod(s) ##update B
-    print('ok6')
+    
     theta <- theta_new
     grad <- g(theta,f,...)
+    delta <- drop(- B %*% g(theta,f,...))
     
   }
   
@@ -171,16 +174,16 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   
   
   H <- matrix(0, nrow = param_num, ncol = param_num) ##initialize Hessian matrix
-  print(H)
+  
   g0 <- g(theta,f,...) ##gradient value at the minimum theta value
   eps <- 1e-7 ## finite difference interval
-  print('ok7')
+  
   for (i in 1:param_num) { ## loop over parameters
     th <- theta; th[i] <- th[i] + eps ##increase theta by eps
     g1 <- g(th,f,...) ##gradient value at theta+eps
-    print('ok8')
+    
     H[i,] <- (g1 - g0)/eps ## approximate second derivatives in Hessian matrix
-    print('ok9')
+    
   }
   
   ##convert asymmetric Hessian matrix into symmetric Hessian matrix
