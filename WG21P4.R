@@ -136,7 +136,7 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
         delta <-  delta / 2
         
       }else{
-        delta<-(1 + 0.1) * delta
+        delta<-(1 + m) * delta
         
       }
       
@@ -157,21 +157,18 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
     rho <- 1/inv_rho ##1/rho^(-1)
     
-    rho_syt <- rho * tcrossprod(s,y) ##rho*s*y^T
-    rho_yst <- rho * tcrossprod(y,s) ##rho*y*s^T
-    matrix1 <- I - rho_syt ##I-rho*s*y^T
-    matrix2 <- I-rho_yst ##I-rho*y*s^T
-    B <- (matrix1 %*% B) %*% matrix2 + rho * tcrossprod(s) ##update B
-    
+    s_yt <- tcrossprod(s,y) ##s*y^T
+    y_st <- tcrossprod(y,s) ##y*s^T
+    B <- B-rho*B%*%y_st -rho*s_yt%*%B+rho^2*s_yt%*%B%*%y_st+ rho * tcrossprod(s) ##update B
     theta <- theta_new
     grad <- g(theta,f,...)
     delta <- drop(- B %*% g(theta,f,...))
     
   }
   
-  #if (iter==maxit & max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
-  #warning('Convergence not reached until maximum iteration!')
-  #}
+  if (iter==maxit & max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
+    warning('Convergence not reached until maximum iteration!')
+  }
   
   
   H <- matrix(0, nrow = param_num, ncol = param_num) ##initialize Hessian matrix
