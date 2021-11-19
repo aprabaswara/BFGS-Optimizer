@@ -74,13 +74,30 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
   iter<-0
   grad <- g(theta,f,...)
 
-  while(iter <= 100 & max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
+  while(iter <= maxit & max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
     
 
     iter <- iter +1
     count<-0
     f0<-f(theta,...)
     grad <- g(theta,f,...)
+    
+    grad_index <- which(is.finite(grad)==FALSE)
+    ##check if objective function is finite or not
+    
+    if (is.finite(f0)==FALSE){
+      warning("Objective function is not finite at given initial theta value!")
+      break
+    }
+    
+    ##check if derivative is finite or not
+    
+    #else if (g(theta,f,...) %in% c(-Inf,Inf) | is.na(g(theta,f,...)))
+    else if (length(grad_index)!=0){
+      warning("Derivative is not finite at given initial theta value!")
+      break
+    }
+    
     delta <- drop(- B %*% g(theta,f,...))
     f1<-f(theta+delta,...)
     grad_delta1 <- drop(crossprod(g(theta,f,...),delta))
@@ -105,25 +122,27 @@ bfgs <- function(theta, f, ..., tol, fscale, maxit){
     s <- delta
     theta_new <- theta + s
     
+    if (f(theta_new,...) > f(theta,...)){
+      warning('Steps failed to reduced objective values but convergence not occured!')
+      break
+    }
+    
     #iteration of B
     y <- g(theta_new,f,...) - g(theta,f,...)
     inv_rho <- drop(crossprod(delta,y)) ##rho^(-1)=s^T*y
     rho <- 1/inv_rho ##1/rho^(-1)
-    rho_syt <- rho * tcrossprod(s,y) ##rho*s*y^T
-    rho_yst <- rho * tcrossprod(y,s) ##rho*y*s^T
-    matrix1 <- I - rho_syt ##I-rho*s*y^T
-    matrix2 <- I-rho_yst ##I-rho*y*s^T
-    
-    B <- (matrix1 %*% B) %*% matrix2 + rho * tcrossprod(s) ##update B
+    s_yt <- tcrossprod(s,y) ##s*y^T
+    y_st <- tcrossprod(y,s) ##y*s^T
+    B <- B-rho*B%*%y_st -rho*s_yt%*%B+rho^2*s_yt%*%B%*%y_st+ rho * tcrossprod(s) ##update B
     theta <- theta_new
     grad <- g(theta,f,...)
     delta <- drop(- B %*% g(theta,f,...))
     
   }
   
-  #if (iter==maxit & max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
-  #warning('Convergence not reached until maximum iteration!')
-  #}
+  if (max(abs(grad)) >= (abs(f(theta,...)) + fscale) * tol){
+    warning('Convergence not reached until maximum iteration!')
+  }
   
   
   H <- matrix(0, nrow = param_num, ncol = param_num) ##initialize Hessian matrix
